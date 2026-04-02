@@ -2,9 +2,9 @@
 import { StyleSheet } from 'react-native';
 import { hp, wp } from '../../../utils/Constant';
 import { color } from '../../../constant';
-  
+
 const styles = StyleSheet.create({
-   container: {
+  container: {
     flex: 1,
     backgroundColor: '#F7F9FC',
   },
@@ -12,7 +12,7 @@ const styles = StyleSheet.create({
   card: {
     // backgroundColor: '#FFF',
     marginTop: hp(5),
-     borderRadius: 20,
+    borderRadius: 20,
     padding: 20,
     // shadowColor: '#000',
     // shadowOffset: { width: 0, height: 2 },
@@ -31,13 +31,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '700',
-     color: '#000',
+    color: '#000',
   },
 
   subTitle: {
     fontSize: 15,
     color: '#000000',
-     marginTop: 6,
+    marginTop: 6,
     marginBottom: 20,
   },
 
@@ -69,7 +69,8 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     fontSize: 12,
-    marginTop: 5,
+    marginBottom: 10,
+    marginTop: -10
   },
 
   signUpContainer: {

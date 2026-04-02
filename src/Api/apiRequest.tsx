@@ -37,10 +37,21 @@ export interface LoginApiParam {
 export interface SignUpApiParam {
   name: string;
   email: string;
-  mobile: string;
   password: string;
-  navigation: any;
-  contycode: string
+}
+
+export interface ForgotPasswordApiParam {
+  email: string;
+}
+
+export interface VerifyResetOtpApiParam {
+  email: string;
+  otp: string;
+}
+
+export interface ResetPasswordApiParam {
+  token: string;
+  new_password: string;
 }
 
 const LogiApi = async (
@@ -62,6 +73,7 @@ const LogiApi = async (
         password: param.password,
       }),
     };
+    console.log(param, 'this is param')
 
     const response = await fetch(`${base_url}/${endpoints.Login}`, requestOptions);
     const text = await response.text();
@@ -73,48 +85,44 @@ const LogiApi = async (
       errorToast('Invalid server response');
       return undefined;
     }
-console.log("login. --- ",parsed?.data)
-    // Success: 200 with data, or 404 "Merchant not found" but with userData + token (new merchant)
-    const data = parsed?.data;
-    const userData = data?.userData ?? data;
+    console.log("Login Response Log (Full):", parsed);
+
+    // Get userData and token from the new structure
+    const userData = parsed?.user ?? parsed?.data?.userData ?? parsed?.data;
     const token =
+      parsed?.access_token ??
+      parsed?.accessToken ??
+      parsed?.data?.access_token ??
+      parsed?.data?.token ??
       userData?.token ??
-      data?.token ??
       userData?.access_token ??
-      userData?.accessToken ??
-      data?.access_token ??
-      data?.accessToken ??
       '';
 
-    const isSuccessWithData = parsed?.success === true && data;
-    const is404WithUserAndToken =
+    const isSuccess = (response.status >= 200 && response.status < 300) || parsed?.success === true;
+    const isSpecialCaseWithToken =
       (parsed?.statusCode === 404 || parsed?.success === false) &&
-      data?.userData &&
+      userData &&
       token;
 
-    if (isSuccessWithData || is404WithUserAndToken) {
-      // Store token in AsyncStorage for API calls (e.g. merchant profile)
+    if (isSuccess || isSpecialCaseWithToken) {
       if (token) {
         await AsyncStorage.setItem('token', token);
       }
 
-      if (is404WithUserAndToken) {
-        successToast('Login successful');
-      } else {
-        successToast(parsed?.message ?? 'Login successful');
-      }
-      console.log("Login data:", { userData, token, isMerchant: true });
-      param.dispatch(loginSuccess({ userData, token, isMerchant: true }));
+      successToast(parsed?.message ?? 'Login successful');
+      console.log("Login successful. UserData:", userData, "Token:", token);
+      param.dispatch(loginSuccess({ userData, token, isMerchant: false }));
 
       param.navigation.reset({
         index: 0,
-        routes: [{ name: ScreenNameEnum.MerchantDrawer }],
+        routes: [{ name: ScreenNameEnum.BottomTabNavigator }],
       });
       return parsed;
     }
 
-    if (parsed?.success === false || (parsed?.statusCode && parsed.statusCode >= 400)) {
-      errorToast(parsed?.message ?? 'Login failed');
+    if (!isSuccess) {
+      errorToast(parsed?.detail || parsed?.message || 'Login failed');
+      return undefined;
     }
   } catch (error) {
     console.error('Login error:', error);
@@ -142,8 +150,6 @@ const SignUpApi = async (
       body: JSON.stringify({
         name: param.name,
         email: param.email,
-        phone: param.mobile,
-        countryCode: param.contycode,
         password: param.password,
       }),
     };
@@ -152,7 +158,7 @@ const SignUpApi = async (
     console.log("response", response)
     const text = await response.text();
     let parsed: any;
-        console.log("parsed", parsed)
+    console.log("parsed", parsed)
 
     try {
       parsed = JSON.parse(text);
@@ -160,15 +166,15 @@ const SignUpApi = async (
       errorToast('Invalid server response');
       return undefined;
     }
-            console.log("parQQQ sed", parsed)
+    console.log("parQQQ sed", parsed)
 
-    if (parsed?.success === true) {
+    const isSuccess = (response.status >= 200 && response.status < 300) || parsed?.success === true;
+    if (isSuccess) {
       successToast(parsed?.message ?? 'Signup successful');
-      // param.navigation.navigate(ScreenNameEnum.PhoneLogin); // Will handle in hook
       return parsed;
-    }
-    if (parsed?.success === false || (parsed?.statusCode && parsed.statusCode >= 400)) {
-      errorToast(parsed?.message ?? 'Signup failed');
+    } else {
+      errorToast(parsed?.detail || parsed?.message || 'Signup failed');
+      return undefined;
     }
   } catch (error) {
     console.error('Signup error:', error);
@@ -201,7 +207,7 @@ const GetMerchantProfileApi = async (
     setLoading(true);
 
     const token = await AsyncStorage.getItem('token');
-console.log("sss",token)
+    console.log("sss", token)
     const response = await fetch(`${base_url}/${endpoints.merchantProfile}`, {
       method: 'GET',
       headers: {
@@ -456,7 +462,7 @@ const GetOrdersAllApi = async (
   try {
     setLoading(true);
     const token = await AsyncStorage.getItem('token');
-     if (!token) {
+    if (!token) {
       clearAuthSession();
       errorToast('Session expired. Please login again.');
       onUnauthorized?.();
@@ -618,7 +624,7 @@ const GetProfileApi = async (
     setLoading(true);
     const token = await AsyncStorage.getItem('token');
 
-    console.log("get api token ",token)
+    console.log("get api token ", token)
     const response = await fetch(`${base_url}/${endpoints.getrofile}`, {
       method: 'GET',
       headers: {
@@ -627,7 +633,7 @@ const GetProfileApi = async (
       },
     });
     const parsed = await response.json();
-        console.log(" --- get Resp --- ",parsed)
+    console.log(" --- get Resp --- ", parsed)
 
     if (parsed?.success) {
       return parsed.data;
@@ -649,14 +655,14 @@ const UpdateProfile = async (
     setLoading(true);
     const token = await AsyncStorage.getItem('token');
     const formData = new FormData();
-      if (payload.imagePrfoile && payload.imagePrfoile.uri) {
+    if (payload.imagePrfoile && payload.imagePrfoile.uri) {
       formData.append('file', {
         uri: payload.imagePrfoile.uri,
         name: payload.imagePrfoile.fileName || 'profile.jpg',
         type: payload.imagePrfoile.type || 'image/jpeg',
       } as any);
     }
-     const response = await fetch(`${base_url}/${endpoints.updateProfile}`, {
+    const response = await fetch(`${base_url}/${endpoints.updateProfile}`, {
       method: 'PATCH',
       headers: {
         Accept: 'application/json',
@@ -666,17 +672,19 @@ const UpdateProfile = async (
     });
     const parsed = await response.json();
 
-    console.log("parsed",parsed)
-    if (parsed?.success) {
-        setLoading(false);
+    console.log("parsed", parsed)
+    const isSuccess = (response.status >= 200 && response.status < 300) || parsed?.success === true;
+    setLoading(false);
+    if (isSuccess) {
       successToast(parsed?.message || 'Profile updated');
       return parsed.data;
+    } else {
+      errorToast(parsed?.detail || parsed?.message || 'Update failed');
+      return undefined;
     }
-    errorToast(parsed?.message || 'Update failed');
-    return undefined;
   } catch (error) {
-    console.log("sss",error)
-      setLoading(false);
+    console.log("sss", error)
+    setLoading(false);
     console.error('Update profile error:', error);
     errorToast('Network error');
     return undefined;
@@ -697,7 +705,7 @@ const VerifyOtpApi = async (
     myHeaders.append('Content-Type', 'application/json');
 
     const response = await fetch(`${base_url}/${endpoints.VerifyOtp}`, {
-      method: 'PATCH',
+      method: 'POST',
       headers: myHeaders,
       body: JSON.stringify({
         email: email,
@@ -705,17 +713,19 @@ const VerifyOtpApi = async (
 
       }),
     });
-    console.log("email",email)
-    console.log("otp",otp)
+    console.log("email", email)
+    console.log("otp", otp)
     const parsed = await response.json();
-        console.log("parsed",parsed)
+    console.log("parsed", parsed)
 
-    if (parsed?.success) {
-      successToast(parsed?.message || 'OTP verified');
+    const isSuccess = (response.status >= 200 && response.status < 300) || parsed?.success === true;
+    if (isSuccess) {
+      successToast(parsed?.message || 'Verification successful');
       return parsed;
+    } else {
+      errorToast(parsed?.detail || parsed?.message || 'Verification failed');
+      return undefined;
     }
-    errorToast(parsed?.message || 'Verification failed');
-    return undefined;
   } catch (error) {
     console.error('Verify OTP error:', error);
     errorToast('Network error');
@@ -736,19 +746,126 @@ const ResendOtpApi = async (
     myHeaders.append('Content-Type', 'application/json');
 
     const response = await fetch(`${base_url}/${endpoints.ResendOtp}`, {
-      method: 'PATCH',
+      method: 'POST',
       headers: myHeaders,
       body: JSON.stringify({ email }),
     });
     const parsed = await response.json();
-    if (parsed?.success) {
+    const isSuccess = (response.status >= 200 && response.status < 300) || parsed?.success === true;
+    if (isSuccess) {
       successToast(parsed?.message || 'OTP resent');
       return parsed;
+    } else {
+      errorToast(parsed?.detail || parsed?.message || 'Resend failed');
+      return undefined;
     }
-    errorToast(parsed?.message || 'Resend failed');
-    return undefined;
   } catch (error) {
     console.error('Resend OTP error:', error);
+    errorToast('Network error');
+    return undefined;
+  } finally {
+    setLoading(false);
+  }
+};
+
+const ForgotPasswordApi = async (
+  param: ForgotPasswordApiParam,
+  setLoading: (loading: boolean) => void,
+): Promise<any> => {
+  try {
+    setLoading(true);
+    const myHeaders = new Headers();
+    myHeaders.append('Accept', 'application/json');
+    myHeaders.append('Content-Type', 'application/json');
+
+    const response = await fetch(`${base_url}/${endpoints.ForgetPassword}`, {
+      method: 'POST',
+      headers: myHeaders,
+      body: JSON.stringify({ email: param.email }),
+    });
+    const parsed = await response.json();
+    const isSuccess = (response.status >= 200 && response.status < 300) || parsed?.success === true;
+    if (isSuccess) {
+      successToast(parsed?.message || 'Instructions sent to your email');
+      return parsed;
+    } else {
+      errorToast(parsed?.detail || parsed?.message || 'Request failed');
+      return undefined;
+    }
+  } catch (error) {
+    console.error('Forgot Password error:', error);
+    errorToast('Network error');
+    return undefined;
+  } finally {
+    setLoading(false);
+  }
+};
+
+const VerifyResetOtpApi = async (
+  param: VerifyResetOtpApiParam,
+  setLoading: (loading: boolean) => void,
+): Promise<any> => {
+  try {
+    setLoading(true);
+    const myHeaders = new Headers();
+    myHeaders.append('Accept', 'application/json');
+    myHeaders.append('Content-Type', 'application/json');
+
+    const response = await fetch(`${base_url}/${endpoints.VerifyResetOtp}`, {
+      method: 'POST',
+      headers: myHeaders,
+      body: JSON.stringify({
+        email: param.email,
+        otp: param.otp,
+      }),
+    });
+    const parsed = await response.json();
+    const isSuccess = (response.status >= 200 && response.status < 300) || parsed?.success === true;
+    if (isSuccess) {
+      successToast(parsed?.message || 'OTP verified successfully');
+      return parsed;
+    } else {
+      errorToast(parsed?.detail || parsed?.message || 'Verification failed');
+      return undefined;
+    }
+  } catch (error) {
+    console.error('Verify Reset OTP error:', error);
+    errorToast('Network error');
+    return undefined;
+  } finally {
+    setLoading(false);
+  }
+};
+
+const ResetPasswordApi = async (
+  param: ResetPasswordApiParam,
+  setLoading: (loading: boolean) => void,
+): Promise<any> => {
+  try {
+    setLoading(true);
+    const myHeaders = new Headers();
+    myHeaders.append('Accept', 'application/json');
+    myHeaders.append('Content-Type', 'application/json');
+
+    const response = await fetch(`${base_url}/${endpoints.ResetPassword}`, {
+      method: 'POST',
+      headers: myHeaders,
+      body: JSON.stringify({
+        token: param.token,
+        new_password: param.new_password,
+      }),
+    });
+    const parsed = await response.json();
+    const isSuccess = (response.status >= 200 && response.status < 300) || parsed?.success === true;
+    if (isSuccess) {
+      successToast(parsed?.message || 'Password reset successful');
+      return parsed;
+    } else {
+      errorToast(parsed?.detail || parsed?.message || 'Reset failed');
+      return undefined;
+    }
+  } catch (error) {
+    console.error('Reset Password error:', error);
     errorToast('Network error');
     return undefined;
   } finally {
@@ -778,7 +895,7 @@ const GetImportHistoryApi = async (
     const url = `${base_url}/${endpoints.ordersImportHistory}`;
     const response = await fetch(url, { method: 'GET', headers: myHeaders });
     const text = await response.text();
-    
+
     let parsed: any;
     try {
       parsed = JSON.parse(text);
@@ -791,14 +908,14 @@ const GetImportHistoryApi = async (
     if (parsed?.success === true) {
       return Array.isArray(parsed?.data) ? parsed.data : [];
     }
-    
+
     if (response.status === 401 || parsed?.statusCode === 401) {
       clearAuthSession();
       errorToast('Session expired. Please login again.');
       onUnauthorized?.();
       return undefined;
     }
-    
+
     return [];
   } catch (error) {
     console.error('Get import history error:', error);
@@ -817,7 +934,7 @@ const GetServiceTypesApi = async (
     setLoading(true);
 
     const token = await AsyncStorage.getItem('token');
-    
+
     const headers: any = {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -873,7 +990,7 @@ const GetItemCategoriesApi = async (
     setLoading(true);
 
     const token = await AsyncStorage.getItem('token');
-    
+
     const headers: any = {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -927,7 +1044,7 @@ const GetPackageSizeApi = async (
     setLoading(true);
 
     const token = await AsyncStorage.getItem('token');
-    
+
     const headers: any = {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -1030,15 +1147,15 @@ const CreateUserOrderApi = async (
     if (parsed?.success === true) {
       successToast(parsed?.message ?? 'Order created successfully');
       return parsed?.data ?? parsed;
-    } 
-    
+    }
+
     if (response.status === 401 || parsed?.statusCode === 401) {
       clearAuthSession();
       errorToast('Session expired. Please login again.');
       onUnauthorized?.();
       return undefined;
     }
-    
+
     if (parsed?.success === false || (parsed?.statusCode && parsed.statusCode >= 400)) {
       errorToast(parsed?.message ?? 'Failed to create order');
       return undefined;
@@ -1071,6 +1188,9 @@ export {
   UpdateProfile,
   VerifyOtpApi,
   ResendOtpApi,
+  ForgotPasswordApi,
+  VerifyResetOtpApi,
+  ResetPasswordApi,
   GetImportHistoryApi,
   GetVehiclesApi,
   GetServiceTypesApi,

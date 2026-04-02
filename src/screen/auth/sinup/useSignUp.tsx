@@ -7,7 +7,6 @@ import { SignUpApi } from '../../../Api/apiRequest';
 export interface SignUpCredentials {
   name: string;
   email: string;
-  phone: string;
   password: string;
   confirmPassword: string;
 }
@@ -19,7 +18,6 @@ const useSignUp = () => {
   const [credentials, setCredentials] = useState<SignUpCredentials>({
     name: '',
     email: '',
-    phone: '',
     password: '',
     confirmPassword: '',
   });
@@ -50,12 +48,6 @@ const useSignUp = () => {
       validationErrors.email = 'Please enter a valid email address';
     }
 
-    if (!credentials.phone.trim()) {
-      validationErrors.phone = 'Phone number is required';
-    } else if (credentials.phone.trim().length < 7) {
-      validationErrors.phone = 'Please enter a valid phone number';
-    }
-
     if (!credentials.password.trim()) {
       validationErrors.password = 'Password is required';
     } else if (credentials.password.length < 6) {
@@ -75,25 +67,21 @@ const useSignUp = () => {
   const handleSignUp = async () => {
     if (!validateFields()) return;
 
-    const fullPhone = selectedCountry.dial_code + credentials.phone;
-    console.log("Submitting Signup:", { ...credentials, fullPhone });
+    console.log("Submitting Signup:", { name: credentials.name, email: credentials.email });
 
     const response = await SignUpApi(
       {
         name: credentials.name,
         email: credentials.email,
-        mobile: fullPhone,
-        contycode: selectedCountry.dial_code,
         password: credentials.password,
-        navigation: navigation,
       },
       setIsLoading
     );
 
-    if (response?.success) {
+    if (response?.success || response) {
       navigation.navigate(ScreenNameEnum.OtpScreen, {
         email: credentials.email,
-        otp: response?.data?.otp // Passing for testing, though usually sent via SMS/Email
+        // otp: response?.data?.otp // Passing for testing, though usually sent via SMS/Email
       });
     }
   };

@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
   error: {
     color: 'red',
     fontSize: 12,
-    marginTop: -5,
+    marginTop: -10,
     marginBottom: 10,
   },
 });

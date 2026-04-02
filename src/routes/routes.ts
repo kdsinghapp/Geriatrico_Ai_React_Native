@@ -9,6 +9,7 @@ import Splash from "../screen/auth/Splash/Splash";
 import LegalPoliciesScreen from "../screen/Profile/LegalPoliciesScreen";
 import PrivacyPolicy from "../screen/Profile/PrivacyPolicy";
 import EditProfile from "../screen/Profile/EditProfile/EditProfile";
+import CreatePassword from "../screen/auth/CreateNewPassword/CreateNewPassword";
 
   
     
@@ -152,6 +153,10 @@ import Explanation from "../screen/Explanation/Explanation";
     //   Component: DocumentShow,
     // },
 
+    {
+      name: ScreenNameEnum.CreatePassword,
+      Component: CreatePassword,
+    },
   ],
 
 

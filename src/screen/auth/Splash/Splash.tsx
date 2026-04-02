@@ -34,12 +34,14 @@ const Splash: React.FC = () => {
 
     const timer = setTimeout(() => {
       try {
-  
-
-                navigation.replace(ScreenNameEnum.OnboardingScreen);
+        if (auth.isLogin) {
+          navigation.replace(ScreenNameEnum.BottomTabNavigator as any);
+        } else {
+          navigation.replace(ScreenNameEnum.OnboardingScreen as any);
+        }
       } catch (error) {
         console.error('Navigation error:', error);
-         navigation.replace(ScreenNameEnum.OnboardingScreen);
+        navigation.replace(ScreenNameEnum.OnboardingScreen as any);
       }
     }, 2000);
 

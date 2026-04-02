@@ -44,21 +44,20 @@ const useLogin = () => {
   };
 
   const handleLogin = async () => {
-    navigation.navigate(ScreenNameEnum.BottomTabNavigator);
-    // if (!validateFields()) return;
+    if (!validateFields()) return;
 
-    // const param = {
-    //   email: credentials.email.trim(),
-    //   password: credentials.password.trim(),
-    //   dispatch,
-    //   navigation,
-    // };
+    const param = {
+      email: credentials.email.trim(),
+      password: credentials.password.trim(),
+      dispatch,
+      navigation,
+    };
 
-    // try {
-    //   await LogiApi(param, setIsLoading);
-    // } catch (error: any) {
-    //   errorToast(error?.message || 'Login error');
-    // }
+    try {
+      await LogiApi(param, setIsLoading);
+    } catch (error: any) {
+      errorToast(error?.message || 'Login error');
+    }
   };
 
   return {

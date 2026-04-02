@@ -13,9 +13,18 @@ import StatusBarComponent from '../../../compoent/StatusBarCompoent';
 import CustomHeader from '../../../compoent/CustomHeader';
 import ScreenNameEnum from '../../../routes/screenName.enum';
 import LogoutModal from '../../../compoent/LogoutModal';
+import { useDispatch } from 'react-redux';
+import { logout } from '../../../redux/feature/authSlice';
 import { useNavigation } from '@react-navigation/native';
 
-const MenuItem = ({ icon, title, subtitle, onPress }) => (
+interface MenuItemProps {
+  icon: any;
+  title: string;
+  subtitle?: string;
+  onPress: () => void;
+}
+
+const MenuItem = ({ icon, title, subtitle, onPress }: MenuItemProps) => (
   <TouchableOpacity style={styles.menuItem} onPress={onPress}>
     <View style={styles.menuLeft}>
       <Image source={icon} style={styles.icon} />
@@ -28,8 +37,11 @@ const MenuItem = ({ icon, title, subtitle, onPress }) => (
   </TouchableOpacity>
 );
 
+
+
 export default function ProfileSetting() {
-  const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const navigation = useNavigation<any>();
   const [visible, setVisible] = React.useState(false);
   return (
     <SafeAreaView style={styles.container}>
@@ -91,7 +103,11 @@ export default function ProfileSetting() {
         <LogoutModal visible={visible}
           onLogout={() => {
             setVisible(false);
-            // Handle logout logic here
+            dispatch(logout());
+            navigation.reset({
+              index: 0,
+              routes: [{ name: ScreenNameEnum.PhoneLogin }],
+            });
           }}
           onCancel={() => setVisible(false)}
         />

@@ -44,7 +44,7 @@ export default function Login() {
           <Text style={[styles.title, {
             marginTop: 15
           }]}>Login</Text>
-          <Text style={styles.subTitle}>Already have an account? Login</Text>
+          {/* <Text style={styles.subTitle}>Already have an account? Login</Text> */}
 
           <View style={{ marginTop: 20 }}>
             <Text style={{ marginBottom: 11, color: 'black', fontSize: 15, fontWeight: "600", }}>Email</Text>
@@ -78,7 +78,7 @@ export default function Login() {
           {/* Forgot Password */}
           <Text
             style={{ color: '#7625FE', marginVertical: 10 }}
-            onPress={() => navigation.navigate(ScreenNameEnum.PasswordReset)}
+          // onPress={() => navigation.navigate(ScreenNameEnum.PasswordReset)}
           >
             Forgot your password?
           </Text>

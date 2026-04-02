@@ -2,21 +2,22 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   Image,
   TouchableOpacity,
   ScrollView,
   ImageBackground
 } from 'react-native';
- import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Loading from '../../../utils/Loader';
 import imageIndex from '../../../assets/imageIndex';
 import StatusBarComponent from '../../../compoent/StatusBarCompoent';
 import CustomButton from '../../../compoent/CustomButton';
 import CustomInput from '../../../compoent/CustomInput';
 import Icon from '../../../compoent/Icon';
-import localizationStrings from '../../../localization/LocalizationString';
- import { styles } from './style';
- import { useCreateNewPassword } from './useCreateNewPassword';
+import { styles } from './style';
+import { useCreateNewPassword } from './useCreateNewPassword';
+import CustomHeader from '../../../compoent/CustomHeader';
 
 export default function CreatePassword() {
   const {
@@ -29,11 +30,11 @@ export default function CreatePassword() {
     handleCPassText,
     handleSetPassword,
     navigation
-  } = useCreateNewPassword()
+  } = useCreateNewPassword();
 
   return (
     <ImageBackground
-      source={imageIndex.AuthBg}
+      source={imageIndex.Loginbg}
       style={styles.background}
       resizeMode="stretch"
     >
@@ -41,18 +42,18 @@ export default function CreatePassword() {
         <StatusBarComponent />
         {isLoading && <Loading />}
         <ScrollView showsVerticalScrollIndicator={false}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Image source={imageIndex.leftCircle} style={styles.backIcon} />
-          </TouchableOpacity>
-
+          {/* <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Image source={imageIndex.BackLeft} style={styles.backIcon} />
+          </TouchableOpacity> */}
+          <CustomHeader label={"Back"} />
           <View style={styles.headerContainer}>
-            <Text  allowFontScaling={false}   style={styles.title}>{localizationStrings.createPasTitle}</Text>
-            <Text  allowFontScaling={false}   style={styles.description}>{localizationStrings.createPassDes}</Text>
+            <Text allowFontScaling={false} style={styles.title}>Create New Password</Text>
+            <Text allowFontScaling={false} style={styles.description}>Your new password must be different from previous used passwords.</Text>
           </View>
 
           <View style={styles.formContainer}>
             <CustomInput
-              placeholder={localizationStrings.passPlace}
+              placeholder="New Password"
               leftIcon={<Icon source={imageIndex.lock} size={20} colorIcon="#A59F9F" />}
               value={password}
               onChangeText={handlePassText}
@@ -61,7 +62,7 @@ export default function CreatePassword() {
             {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
             <CustomInput
-              placeholder={localizationStrings.cPasswordPlac}
+              placeholder="Confirm Password"
               leftIcon={<Icon source={imageIndex.lock} size={20} colorIcon="#A59F9F" />}
               value={confirmPassword}
               onChangeText={handleCPassText}
@@ -71,7 +72,7 @@ export default function CreatePassword() {
           </View>
         </ScrollView>
 
-        <CustomButton title={localizationStrings.submit} onPress={handleSetPassword} />
+        <CustomButton title="Reset Password" onPress={handleSetPassword} />
       </SafeAreaView>
     </ImageBackground>
   );

@@ -9,9 +9,10 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    marginTop: hp(5),
+    // marginTop: hp(5),
     borderRadius: 20,
     padding: 20,
+    paddingTop: 0
   },
 
   logoText: {
@@ -24,14 +25,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: '700',
-     color: '#000',
+    color: '#000',
   },
 
   subTitle: {
     fontSize: 14,
     color: '#000000',
-     marginTop: 6,
-    marginBottom:45,
+    marginTop: 6,
+    marginBottom: 45,
   },
 
   phoneRow: {

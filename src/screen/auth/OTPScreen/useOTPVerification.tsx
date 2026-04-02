@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useBlurOnFulfill, useClearByFocusCell } from 'react-native-confirmation-code-field';
 import { useDispatch } from 'react-redux';
-import { ResendOtpApi, VerifyOtpApi } from '../../../Api/apiRequest';
+import { ResendOtpApi, VerifyOtpApi, VerifyResetOtpApi } from '../../../Api/apiRequest';
 import ScreenNameEnum from '../../../routes/screenName.enum';
- 
+
 export const useOtpVerification = (cellCount: number = 4) => {
   const navigation = useNavigation<any>();
   const route: any = useRoute();
   const { phone, code, fromUserLogin, email, otp } = route.params || {};
-  const [value, setValue] = useState();
+  const [value, setValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const dispatch = useDispatch();
   const [timer, setTimer] = useState(60);
@@ -43,7 +43,7 @@ export const useOtpVerification = (cellCount: number = 4) => {
     if (timer > 0) return;
     try {
       const response = await ResendOtpApi(email, setIsLoading);
-      if (response?.success) {
+      if (response?.success || response) {
         setTimer(60);
       }
     } catch (error) {
@@ -58,10 +58,22 @@ export const useOtpVerification = (cellCount: number = 4) => {
     }
     setErrorMessage('');
 
-    const response = await VerifyOtpApi(email, value, setIsLoading);
-    console.log("response",email, value)
-    if (response?.success) {
-      navigation.replace(ScreenNameEnum.PhoneLogin);
+    if (route.params?.isFromForgot) {
+      const response = await VerifyResetOtpApi({ email, otp: value }, setIsLoading);
+      if (response) {
+        console.log(response, 'this is otp')
+        // Assuming response or response.token is identifying the token
+        const token = typeof response === 'string' ? response : (response?.data ?? response?.reset_token ?? value);
+        navigation.navigate(ScreenNameEnum.CreatePassword, {
+          token: token,
+          email: email
+        });
+      }
+    } else {
+      const response = await VerifyOtpApi(email, value, setIsLoading);
+      if (response?.success || response) {
+        navigation.replace(ScreenNameEnum.PhoneLogin);
+      }
     }
   };
 

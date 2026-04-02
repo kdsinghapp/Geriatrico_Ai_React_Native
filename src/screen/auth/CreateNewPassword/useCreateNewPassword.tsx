@@ -1,7 +1,19 @@
 import { useState } from 'react';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { updatePassword } from '../../../Api/apiRequest'; 
-import { validateConfirmPassword, validatePassword } from '../../../utils/validation';
+import { ResetPasswordApi } from '../../../Api/apiRequest';
+import ScreenNameEnum from '../../../routes/screenName.enum';
+
+const validatePassword = (pass: string) => {
+  if (!pass) return 'Password is required';
+  if (pass.length < 6) return 'Password must be at least 6 characters';
+  return '';
+};
+
+const validateConfirmPassword = (pass: string, confirmPass: string) => {
+  if (!confirmPass) return 'Please confirm your password';
+  if (pass !== confirmPass) return 'Passwords do not match';
+  return '';
+};
 
 export const useCreateNewPassword = () => {
   const [password, setPassword] = useState('');
@@ -10,9 +22,9 @@ export const useCreateNewPassword = () => {
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const navigation = useNavigation();
-  const route = useRoute();
-  const { userId } = route?.params || {};
+  const navigation = useNavigation<any>();
+  const route: any = useRoute();
+  const { email, token } = route?.params || {};
 
   const handlePassText = (text: string) => {
     setPassword(text);
@@ -41,13 +53,17 @@ export const useCreateNewPassword = () => {
     if (passErr || confirmErr) return;
 
     try {
-      const params = {
-        userId,
-        navigation,
-        confirmPassword,
-      };
-
-      await updatePassword(params, setIsLoading);
+      const response = await ResetPasswordApi(
+        {
+          token: token,
+          new_password: password,
+        },
+        setIsLoading
+      );
+      console.log(response, 'response', token, password)
+      if (response?.success || response) {
+        navigation.navigate(ScreenNameEnum.PhoneLogin);
+      }
     } catch (error) {
       console.error('Set password error:', error);
     }

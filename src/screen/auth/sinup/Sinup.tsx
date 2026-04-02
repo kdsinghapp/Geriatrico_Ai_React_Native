@@ -56,18 +56,18 @@ export default function Sinup() {
            }]}>Sign Up</Text>
           <Text style={styles.subTitle}>Create a new account</Text>
 
-          {/* Name */}
-          {/* <TextInputField
+          <Text style={{ marginBottom: 18, color: 'black', fontSize: 15, fontWeight: "600", }}>Full Name</Text>
+          <TextInputField
             placeholder="Full Name"
             text={credentials.name}
             onChangeText={(value: string) => handleChange('name', value)}
             firstLogo={true}
             img={imageIndex.userLogo}
             error={errors.name}
-          /> */}
+          />
 
           {/* Email */}
-                      <Text style={{ marginBottom: 18, color: 'black', fontSize: 15, fontWeight: "600", }}>Email</Text>
+          <Text style={{ marginBottom: 18, color: 'black', fontSize: 15, fontWeight: "600", }}>Email</Text>
           
           <TextInputField
             placeholder="Email"
