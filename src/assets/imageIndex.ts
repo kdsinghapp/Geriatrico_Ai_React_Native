@@ -100,6 +100,7 @@ Minivan: require('./images/Minivan.png'),
 BoxTruck: require('./images/BoxTruck.png'),
 ContactUs: require('./images/ContactUs.png'),
 ChangePassword: require('./images/ChangePassword.png'),
+empty: require('./images/empty.png'),
 
 
 

@@ -40,7 +40,7 @@ export default function CreatePassword() {
     >
       <SafeAreaView style={styles.container}>
         <StatusBarComponent />
-        {isLoading && <Loading />}
+        {isLoading && <Loading visible={isLoading} />}
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Image source={imageIndex.BackLeft} style={styles.backIcon} />

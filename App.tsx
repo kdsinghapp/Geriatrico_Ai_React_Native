@@ -6,6 +6,7 @@ import { TextInput } from 'react-native';
 import 'react-native-reanimated';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './src/services/queryClient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 // "react-native-maps": "^1.26.14",
 // 
 
@@ -24,7 +25,9 @@ LogBox.ignoreAllLogs();
 
 const App: FunctionComponent<any> = () =>
     <QueryClientProvider client={queryClient}>
-        <AppNavigator />
+        <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
+            <AppNavigator />
+        </SafeAreaView>
     </QueryClientProvider>
 
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
- 
+
 import { useSelector } from 'react-redux';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -11,7 +11,9 @@ import { color } from '../../../constant';
 import CustomButton from '../../../compoent/CustomButton';
 import font from '../../../theme/font';
 import LoadingModal from '../../../utils/Loader';
- 
+import { ChangePasswordApi } from '../../../Api/apiRequest';
+import { errorToast } from '../../../utils/customToast';
+
 const ChangePasswordScreen = () => {
     const navigation = useNavigation()
     const [isLoading, setLoading] = useState(false)
@@ -22,41 +24,36 @@ const ChangePasswordScreen = () => {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
+
 
     const validatePasswords = () => {
         if (!oldpass) {
-            setErrorMessage("Please enter your old password.");
+            errorToast("Please enter your old password.");
         } else if (!password) {
-            setErrorMessage("Please enter a new password.");
+            errorToast("Please enter a new password.");
         } else if (password.length < 6) {
-            setErrorMessage("New password must be at least 6 characters long.");
+            errorToast("New password must be at least 6 characters long.");
         } else if (!confirmPassword) {
-            setErrorMessage("Please confirm your new password.");
+            errorToast("Please confirm your new password.");
         } else if (password !== confirmPassword) {
-            setErrorMessage("New Password and Confirm Password do not match.");
+            errorToast("New Password and Confirm Password do not match.");
         } else {
-            setErrorMessage("");
             handleSubmit();
         }
     };
 
     const handleSubmit = async () => {
         try {
-            let data = {
-                oldpassw: "1234567",
-                password: "1234567",
-                confirmPassword: "1234567"
+            const payload = {
+                old_password: oldpass,
+                new_password: password
+            };
+            const res = await ChangePasswordApi(payload, setLoading);
+            if (res) {
+                navigation.goBack();
             }
-            // let data = {
-            //     oldpassw: oldpass,
-            //     password: password,
-            //     confirmPassword: confirmPassword
-            // }
-
-            console.log("data", data)
-            // const response = await ChangePass_Api(data, isLogin.userData.id, setLoading);
         } catch (error) {
+            console.error("Change password error:", error);
         }
     }
     return (
@@ -65,9 +62,9 @@ const ChangePasswordScreen = () => {
 
             <StatusBarComponent />
             <CustomHeader
-label="Change Password"
+                label="Change Password"
 
-              />
+            />
             <View style={{ marginHorizontal: 12, flex: 1 }}>
 
                 <View style={{ marginTop: 35 }}>
@@ -132,7 +129,7 @@ label="Change Password"
                 <View style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: 20 }}>
                     <CustomButton
                         title="Save"
-                    // onPress={() => validatePasswords()}
+                        onPress={() => validatePasswords()}
                     />
                 </View>
             </View>
@@ -161,16 +158,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         marginBottom: 15,
         height: 60,
-        paddingVertical: 10,
-        borderWidth:2,
+        // paddingVertical: 10,
+        borderWidth: 2,
         borderColor: "#F7F8F8"
     },
     input: {
         flex: 1,
         marginLeft: 10,
         color: "black",
-        fontSize:16 ,
-        fontFamily:font.MonolithRegular
+        fontSize: 16,
+        fontFamily: font.MonolithRegular
     },
 
 });

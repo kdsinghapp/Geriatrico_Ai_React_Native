@@ -61,6 +61,17 @@ const AuthSlice = createSlice({
       state.isMerchant = action.payload.isMerchant;
     },
 
+    updateUserData(state, action: PayloadAction<any>) {
+      state.userData = action.payload;
+      AsyncStorage.getItem('authData').then((data) => {
+        if (data) {
+          const parsed = JSON.parse(data);
+          parsed.userData = action.payload;
+          AsyncStorage.setItem('authData', JSON.stringify(parsed));
+        }
+      });
+    },
+
     logout(state) {
       state.isLogin = false;
       state.isLogOut = true;
@@ -74,5 +85,5 @@ const AuthSlice = createSlice({
   },
 });
 
-export const { loginSuccess, restoreLogin, logout } = AuthSlice.actions;
+export const { loginSuccess, restoreLogin, logout, updateUserData } = AuthSlice.actions;
 export default AuthSlice.reducer;

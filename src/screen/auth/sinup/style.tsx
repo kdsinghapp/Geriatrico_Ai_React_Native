@@ -12,7 +12,6 @@ const styles = StyleSheet.create({
     // marginTop: hp(5),
     borderRadius: 20,
     padding: 20,
-    paddingTop: 0
   },
 
   logoText: {

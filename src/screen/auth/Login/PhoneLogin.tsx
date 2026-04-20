@@ -78,7 +78,7 @@ export default function Login() {
           {/* Forgot Password */}
           <Text
             style={{ color: '#7625FE', marginVertical: 10 }}
-          // onPress={() => navigation.navigate(ScreenNameEnum.PasswordReset)}
+            onPress={() => navigation.navigate(ScreenNameEnum.PasswordReset)}
           >
             Forgot your password?
           </Text>

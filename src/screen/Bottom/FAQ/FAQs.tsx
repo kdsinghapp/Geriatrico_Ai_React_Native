@@ -14,6 +14,9 @@ import imageIndex from '../../../assets/imageIndex';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import StatusBarComponent from '../../../compoent/StatusBarCompoent';
 import CustomHeader from '../../../compoent/CustomHeader';
+import { GetFaqsApi } from '../../../Api/apiRequest';
+import CustomLoader from '../../../compoent/CustomLoader';
+import { useEffect } from 'react';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -40,32 +43,22 @@ const FAQItem = ({ question, answer }: any) => {
   );
 };
 export default function FAQs() {
-  const faqs = [
-    {
-      question: 'What services do you offer?',
-      answer: 'We offer design, development and consulting services.',
-    },
-    {
-      question: 'How can I get a quote for your services?',
-      answer: 'You can contact us via the contact page.',
-    },
-    {
-      question: 'What industries do you cater to?',
-      answer: 'We work across multiple industries.',
-    },
-    {
-      question: 'How can I contact your customer support?',
-      answer: 'Email or call our support team.',
-    },
-    {
-      question: 'What is your refund policy?',
-      answer: 'Refunds depend on project terms.',
-    },
-    {
-      question: 'How long does it take to complete a project?',
-      answer: 'It depends on project scope.',
-    },
-  ];
+  const [faqs, setFaqs] = useState<{ question: string; answer: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchFaqs();
+  }, []);
+
+  const fetchFaqs = async () => {
+    const res = await GetFaqsApi(setLoading);
+    if (res && res.data) {
+      setFaqs(res.data);
+    } else if (res && Array.isArray(res)) {
+      setFaqs(res);
+    }
+  };
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -92,13 +85,19 @@ export default function FAQs() {
 
         {/* FAQ List */}
         <View style={styles.card}>
-          {faqs.map((item, index) => (
-            <FAQItem
-              key={index}
-              question={item.question}
-              answer={item.answer}
-            />
-          ))}
+          {loading ? (
+            <CustomLoader />
+          ) : faqs.length > 0 ? (
+            faqs.map((item, index) => (
+              <FAQItem
+                key={index}
+                question={item.question}
+                answer={item.answer}
+              />
+            ))
+          ) : (
+            <Text style={{ textAlign: 'center', marginTop: 20 }}>No FAQs found.</Text>
+          )}
         </View>
 
       </ScrollView>

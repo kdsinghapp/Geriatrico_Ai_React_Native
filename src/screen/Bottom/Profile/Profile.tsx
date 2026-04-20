@@ -13,9 +13,12 @@ import StatusBarComponent from '../../../compoent/StatusBarCompoent';
 import CustomHeader from '../../../compoent/CustomHeader';
 import ScreenNameEnum from '../../../routes/screenName.enum';
 import LogoutModal from '../../../compoent/LogoutModal';
-import { useDispatch } from 'react-redux';
-import { logout } from '../../../redux/feature/authSlice';
-import { useNavigation } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
+import { logout, updateUserData } from '../../../redux/feature/authSlice';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
+import { GetAuthProfileApi } from '../../../Api/apiRequest';
+import CustomLoader from '../../../compoent/CustomLoader';
 
 interface MenuItemProps {
   icon: any;
@@ -42,7 +45,24 @@ const MenuItem = ({ icon, title, subtitle, onPress }: MenuItemProps) => (
 export default function ProfileSetting() {
   const dispatch = useDispatch();
   const navigation = useNavigation<any>();
+  const isFocused = useIsFocused();
+  const userData = useSelector((state: any) => state.auth.userData);
+  const [loading, setLoading] = useState(false);
   const [visible, setVisible] = React.useState(false);
+
+  useEffect(() => {
+    if (isFocused) {
+      fetchProfile();
+    }
+  }, [isFocused]);
+
+  const fetchProfile = async () => {
+    const res = await GetAuthProfileApi(setLoading);
+    if (res && res.profile) {
+      dispatch(updateUserData(res.profile));
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBarComponent />
@@ -55,15 +75,16 @@ export default function ProfileSetting() {
         {/* Profile Card */}
         <View style={styles.profileCard}>
           <Image
-            source={{ uri: 'https://i.pravatar.cc/100' }}
+            source={{ uri: userData?.profile_photo || 'https://i.pravatar.cc/100' }}
             style={styles.avatar}
           />
           <View style={{ flex: 1 }}>
-            <Text style={styles.name}>Itunuoluwa Abidoye</Text>
-            <Text style={styles.username}>@itunuoluwa</Text>
+            <Text style={styles.name}>{userData?.name || 'Loading...'}</Text>
+            <Text style={styles.username}>{userData?.email || userData?.phone_no || ''}</Text>
           </View>
-         
         </View>
+
+        {loading && <CustomLoader />}
 
         {/* Menu */}
         <View style={styles.card}>

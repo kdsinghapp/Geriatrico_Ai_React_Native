@@ -16,16 +16,12 @@ const useLogin = () => {
 
   const [credentials, setCredentials] = useState<LoginCredentials>({
 
-    email: '',
-    // email: 'Govide@gmail.com',
-    password: '',
+    // email: '',
+    email: 'gs1@yopmail.com',
+    password: '123456',
 
-// 
+    // 
   });
-  // Test12@gmail.com
-  // test@1245
-  // Kapil@gmail.com
-  // Josh@gmail.com
 
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({});
   const [isLoading, setIsLoading] = useState(false);

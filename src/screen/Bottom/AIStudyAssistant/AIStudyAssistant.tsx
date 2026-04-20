@@ -8,7 +8,9 @@
 // Replace YOUR_API_KEY below with your Anthropic API key.
 // ──────────────────────────────────────────────────────────
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useSelector } from 'react-redux';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -23,11 +25,17 @@ import {
   Animated,
   Easing,
   Image,
+  Keyboard,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
 import imageIndex from '../../../assets/imageIndex';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CreateSessionApi, ChatApi, DeleteSessionApi, GetChatHistoryApi, ChatWithFileApi, UploadFileApi } from '../../../Api/apiRequest';
+import { errorToast, successToast } from '../../../utils/customToast';
+import { pick, types, DocumentPickerResponse } from '@react-native-documents/picker';
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
 // ─── Config ───────────────────────────────────────────────
 const API_KEY = 'YOUR_API_KEY'; // ← replace with your key
@@ -57,6 +65,10 @@ interface Message {
   role: 'user' | 'bot';
   text: string;
   time: string;
+  file?: {
+    name: string;
+    type: string;
+  };
 }
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -69,16 +81,7 @@ const getNow = (): string => {
   return `${h}:${m} ${ap}`;
 };
 
-const INITIAL_MESSAGES: Message[] = [
-  { id: 1, role: 'user', text: 'What is photosynthesis', time: '11:31 AM' },
-  {
-    id: 2, role: 'bot',
-    text: 'Photosynthesis is a process in which plants use sunlight, carbon dioxide, and water to produce glucose and release oxygen. This is covered in Chapter 2 of your Biology Notes.pdf.',
-    time: '11:35 AM',
-  },
-  { id: 3, role: 'user', text: 'Explain in simple words', time: '11:36 AM' },
-  { id: 4, role: 'bot', text: 'In simple terms: plants make their own food using sunlight.', time: '11:36 AM' },
-];
+const INITIAL_MESSAGES: Message[] = [];
 
 // ─── BotAvatar ────────────────────────────────────────────
 const BotAvatar: React.FC<{ size?: number }> = ({ size = 30 }) => (
@@ -96,6 +99,41 @@ const SendIcon: React.FC = () => (
   <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
     <Path d="M22 2L11 13" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
     <Path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+// ─── PinIcon ──────────────────────────────────────────────
+const PinIcon: React.FC = () => (
+  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M21.44 11.05L12.25 20.24C11.1242 21.3658 9.59725 21.9983 8.005 21.9983C6.41275 21.9983 4.88582 21.3658 3.76 20.24C2.63418 19.1142 2.00168 17.5872 2.00168 15.995C2.00168 14.4027 2.63418 12.8758 3.76 11.75L12.33 3.17998C13.0806 2.42943 14.0985 2.00781 15.16 2.00781C16.2215 2.00781 17.2394 2.42943 17.99 3.17998C18.7405 3.93053 19.1622 4.94843 19.1622 6.00998C19.1622 7.07153 18.7405 8.08943 17.99 8.83998L9.41 17.41C9.03473 17.7853 8.52578 17.9961 7.995 17.9961C7.46422 17.9961 6.95527 17.7853 6.58 17.41C6.20473 17.0347 5.99393 16.5258 5.99393 15.995C5.99393 15.4642 6.20473 14.9553 6.58 14.58L15.07 6.09998"
+      stroke={C.purple}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+// ─── MicIcon ──────────────────────────────────────────────
+const MicIcon: React.FC = () => (
+  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 1C11.2044 1 10.4413 1.31607 9.87868 1.87868C9.31607 2.44129 9 3.20435 9 4V12C9 12.7956 9.31607 13.5587 9.87868 14.1213C10.4413 14.6839 11.2044 15 12 15C12.7956 15 13.5587 14.6839 14.1213 14.1213C14.6839 13.5587 15 12.7956 15 12V4C15 3.20435 14.6839 2.44129 14.1213 1.87868C13.5587 1.31607 12.7956 1 12 1Z"
+      stroke={C.purple}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M19 10V12C19 13.8565 18.2625 15.637 16.9497 16.9497C15.637 18.2625 13.8565 19 12 19C10.1435 19 8.36301 18.2625 7.05025 16.9497C5.73749 15.637 5 13.8565 5 12V10"
+      stroke={C.purple}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path d="M12 19V23" stroke={C.purple} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M8 23H16" stroke={C.purple} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
@@ -125,7 +163,6 @@ const UserBubble: React.FC<{ text: string; time: string }> = ({ text, time }) =>
 const BotBubble: React.FC<{ text: string; time: string }> = ({ text, time }) => (
   <View style={styles.botRow}>
     <Image source={imageIndex.app2}
-
       style={{
         height: 22,
         width: 22
@@ -133,10 +170,25 @@ const BotBubble: React.FC<{ text: string; time: string }> = ({ text, time }) => 
     />
     <View style={{ flex: 1 }}>
       <View style={styles.botBubble}>
-        <Text style={styles.botText}>{text}</Text>
+        <Text selectable style={styles.botText}>{text}</Text>
       </View>
       <Text style={styles.timestamp}>{time}</Text>
     </View>
+  </View>
+);
+
+const FilePreview: React.FC<{ file: any; onClear: () => void }> = ({ file, onClear }) => (
+  <View style={styles.filePreviewBar}>
+    <View style={styles.filePreviewInfo}>
+      <Text style={styles.fileIconText}>📄</Text>
+      <View style={{ flex: 1 }}>
+        <Text numberOfLines={1} style={styles.fileNameText}>{file.name}</Text>
+        <Text style={styles.fileSizeText}>Ready to upload</Text>
+      </View>
+    </View>
+    <TouchableOpacity onPress={onClear}>
+      <Text style={styles.clearFileText}>✕</Text>
+    </TouchableOpacity>
   </View>
 );
 
@@ -180,42 +232,146 @@ const AIStudyAssistant: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<DocumentPickerResponse | null>(null);
   const listRef = useRef<FlatList>(null);
+  const { userData } = useSelector((state: any) => state.auth);
+  const userId = userData?._id || userData?.id || userData?.user_id || null;
+
+  console.log('--- AIStudyAssistant Component Render ---');
+  console.log('userData from Redux:', userData);
+  console.log('computed userId:', userId);
+
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardVisible(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      console.log('--- useFocusEffect: Screen Focused ---');
+      let activeSessionId: string | null = null;
+
+      const initSession = async () => {
+        if (!userId) {
+          console.log('--- Session Init Failed: No User ID found ---', userData);
+          return;
+        }
+
+        console.log('--- Initializing Session (Focus) ---');
+        console.log('Requesting session for User ID:', userId);
+
+        try {
+          const res = await CreateSessionApi(userId, () => { });
+          console.log('CreateSessionApi Raw Response:', JSON.stringify(res, null, 2));
+
+          const sid = typeof res === 'string' ? res : res?.session_id;
+          console.log('Extracted Session ID:', sid);
+
+          if (sid) {
+            setSessionId(sid);
+            activeSessionId = sid;
+            console.log('Session successfully set in state:', sid);
+
+            const historyRes = await GetChatHistoryApi(sid, () => { });
+            console.log('Chat History Response:', JSON.stringify(historyRes, null, 2));
+
+            const historyData = Array.isArray(historyRes) ? historyRes : (historyRes?.data && Array.isArray(historyRes.data) ? historyRes.data : null);
+            if (historyData) {
+              const historyMsgs: Message[] = historyData.map((m: any, idx: number) => ({
+                id: idx,
+                role: (m.role === 'assistant' ? 'bot' : 'user') as 'bot' | 'user',
+                text: m.message || m.reply || '',
+                time: getNow(),
+              }));
+              setMessages(historyMsgs);
+              console.log('Loaded history messages:', historyMsgs.length);
+            }
+          } else {
+            console.error('Session ID was not returned by API');
+            errorToast("Unable to start AI session");
+          }
+        } catch (err) {
+          console.error('Error during session initialization:', err);
+          errorToast("Critical error starting session");
+        }
+      };
+
+      if (userId) {
+        initSession();
+      } else {
+        console.warn('--- useFocusEffect: userId is missing, skipping session init ---');
+      }
+
+      return () => {
+        console.log('--- useFocusEffect: Screen Blurred ---');
+        if (activeSessionId) {
+          console.log('--- Deleting Session (Blur/Switch Tab) ---', activeSessionId);
+          DeleteSessionApi(activeSessionId, () => { });
+          setSessionId(null);
+          setMessages([]); // Optional: clear messages for a fresh start next time
+        }
+      };
+    }, [userId])
+  );
 
   const scrollToBottom = () => listRef.current?.scrollToEnd({ animated: true });
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || loading) return;
+  const handleFilePick = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        const permission = Platform.Version >= 33
+          ? PERMISSIONS.ANDROID.READ_MEDIA_IMAGES
+          : PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE;
 
-    const userMsg: Message = { id: Date.now(), role: 'user', text, time: getNow() };
+        await request(permission);
+      }
+
+      const [res] = await pick({
+        type: [types.pdf, types.docx, types.doc, types.plainText],
+      });
+      // Automatically send the file after picking
+      await send(res);
+    } catch (err) {
+      if (err instanceof Error && err.message === 'User cancelled') return;
+      console.error('Pick error', err);
+    }
+  };
+
+  const send = async (pickedFile?: DocumentPickerResponse) => {
+
+    const text = input.trim();
+    const fileToSend = pickedFile || selectedFile;
+    if (!text || loading || !sessionId) return;
+    const userMsg: Message = {
+      id: Date.now(),
+      role: 'user',
+      text: text || (fileToSend ? `Uploaded: ${fileToSend.name}` : ''),
+      time: getNow(),
+      file: fileToSend ? { name: fileToSend.name || 'document', type: fileToSend.type || '' } : undefined
+    };
+
     setMessages(prev => [...prev, userMsg]);
     setInput('');
-    setLoading(true);
-
-    // Build conversation history for the API (user/assistant turns only)
-    const history = [...messages, userMsg]
-      .filter(m => m.role === 'user' || m.role === 'bot')
-      .map(m => ({ role: m.role === 'bot' ? 'assistant' : 'user', content: m.text }));
+    setSelectedFile(null);
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': API_KEY,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          max_tokens: 1000,
-          system: SYSTEM,
-          messages: history,
-        }),
-      });
+      if (fileToSend) {
+        setLoading(true);
+        const upRes = await UploadFileApi(sessionId, fileToSend, () => { });
+        if (!upRes) {
+          errorToast("File upload failed");
+          setLoading(false);
+          return;
+        }
+      }
 
-      const data = await res.json();
-      const reply: string = data?.content?.[0]?.text ?? "Sorry, I couldn't find an answer.";
+      const res = await ChatApi(sessionId, text, setLoading);
+      const reply: string = (typeof res === 'string' && res.trim().length > 0)
+        ? res
+        : (res?.reply ?? res?.message ?? res?.data ?? res?.answer ?? "Sorry, I couldn't find an answer.");
       setMessages(prev => [...prev, { id: Date.now() + 1, role: 'bot', text: reply, time: getNow() }]);
     } catch {
       setMessages(prev => [...prev, {
@@ -224,8 +380,6 @@ const AIStudyAssistant: React.FC = () => {
         text: 'Something went wrong. Please try again.',
         time: getNow(),
       }]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -234,7 +388,7 @@ const AIStudyAssistant: React.FC = () => {
       ? <UserBubble text={item.text} time={item.time} />
       : <BotBubble text={item.text} time={item.time} />;
   // : <BotBubble  text={item.text} time={item.time} />;
-
+  const inset = useSafeAreaInsets()
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor={C.white} />
@@ -250,7 +404,7 @@ const AIStudyAssistant: React.FC = () => {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <FlatList
           ref={listRef}
@@ -262,11 +416,21 @@ const AIStudyAssistant: React.FC = () => {
           onContentSizeChange={scrollToBottom}
           onLayout={scrollToBottom}
           ListFooterComponent={loading ? <TypingIndicator /> : null}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Image source={imageIndex.empty} style={styles.emptyImg} />
+              <Text style={styles.emptyTitle}>Hello</Text>
+              <Text style={styles.emptySub}>How can I assist you today?</Text>
+            </View>
+          }
           showsVerticalScrollIndicator={false}
         />
 
+        {/* File Preview if selected */}
+        {selectedFile && <FilePreview file={selectedFile} onClear={() => setSelectedFile(null)} />}
+
         {/* Input bar */}
-        <View style={styles.inputBar}>
+        <View style={[styles.inputBar, { marginBottom: keyboardVisible ? 10 : 65 + inset.bottom }]}>
           <View style={styles.inputWrap}>
             <TextInput
               style={styles.textInput}
@@ -277,19 +441,25 @@ const AIStudyAssistant: React.FC = () => {
               multiline
               maxLength={500}
               returnKeyType="send"
-              onSubmitEditing={send}
+              onSubmitEditing={() => send()}
+              underlineColorAndroid="transparent"
             />
-
           </View>
 
-          <TouchableOpacity onPress={send} disabled={loading || !input.trim()} activeOpacity={0.8}>
+          {/* <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} onPress={handleFilePick}>
+            <PinIcon />
+          </TouchableOpacity> */}
+
+          {/* <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
+            <MicIcon />
+          </TouchableOpacity> */}
+
+          <TouchableOpacity onPress={() => send()} disabled={loading || !input.trim()} activeOpacity={0.8}>
             <LinearGradient
               colors={loading || !input.trim() ? ['#C4A7F7', '#C4A7F7'] : [C.purple, C.lightPurple]}
               style={styles.sendBtn}
             >
-              {loading
-                ? <ActivityIndicator color={C.white} size="small" />
-                : <SendIcon />}
+              {loading ? <ActivityIndicator color={C.white} size="small" /> : <SendIcon />}
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -357,44 +527,89 @@ const styles = StyleSheet.create({
 
   // Input
   inputBar: {
-  flexDirection: 'row',
-alignItems: 'center',
-backgroundColor: C.white,
-
-paddingHorizontal: 12,
-paddingVertical: 10,
-gap: 8,
-
-bottom: 80,
-marginHorizontal: 10,
-borderRadius: 20,
-
-// iOS Shadow
-shadowColor: '#000',
-shadowOffset: {
-  width: 0,
-  height: 4,
-},
-shadowOpacity: 0.15,
-shadowRadius: 6,
-
-// Android Shadow
-elevation: 10,
-  
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.white,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    gap: 8,
+    marginHorizontal: 10,
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: C.borderLight,
+    // Shadows
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 4 },
+    // shadowOpacity: 0.05,
+    // shadowRadius: 10,
+    // elevation: 3,
+  },
+  emptyContainer: {
+    paddingTop: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyImg: {
+    width: 200,
+    height: 200,
+    resizeMode: 'contain',
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 10,
+  },
+  emptySub: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    paddingHorizontal: 40,
   },
   inputWrap: {
-    flex: 1, flexDirection: 'row', alignItems: 'center',
-    height: 60,
-    marginHorizontal: 15,
-    borderRadius: 20
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    paddingLeft: 5,
   },
-  textInput: { flex: 1, fontSize: 13.5, color: C.grayText, maxHeight: 80, paddingTop: 0, paddingBottom: 0 },
+  textInput: {
+    flex: 1,
+    fontSize: 13.5,
+    color: C.grayText,
+    maxHeight: 80,
+    paddingVertical: Platform.OS === 'ios' ? 8 : 4,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+  },
   iconBtn: { padding: 2 },
   iconEmoji: { fontSize: 18 },
   sendBtn: {
     width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
     shadowColor: C.purple, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 10,
   },
+  filePreviewBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.white,
+    marginHorizontal: 15,
+    marginBottom: 5,
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.borderLight,
+  },
+  filePreviewInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  fileIconText: { fontSize: 24 },
+  fileNameText: { fontSize: 13, fontWeight: '600', color: C.grayText },
+  fileSizeText: { fontSize: 11, color: C.purple },
+  clearFileText: { fontSize: 18, color: '#FF4D4D', paddingHorizontal: 5 },
 });
 
 export default AIStudyAssistant;

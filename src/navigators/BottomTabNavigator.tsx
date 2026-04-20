@@ -113,7 +113,7 @@ const BottomTabNavigator: React.FC = () => {
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    bottom: 10,
+    bottom: 0,
     left: 15,
     right: 15,
     height: 75,

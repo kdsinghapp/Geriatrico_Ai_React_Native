@@ -10,62 +10,28 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import imageIndex from '../../../assets/imageIndex';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import ScreenNameEnum from '../../../routes/screenName.enum';
+import { useDispatch, useSelector } from 'react-redux';
+import { useEffect, useState } from 'react';
+import { GetAuthProfileApi, GetQuizzesApi, Quiz, GetAnalyticsApi, AnalyticsResponse, GetCombinedStatsApi, CombinedStatsResponse } from '../../../Api/apiRequest';
+import CustomLoader from '../../../compoent/CustomLoader';
+import { updateUserData } from '../../../redux/feature/authSlice';
 
-const recommendedQuestions = [
-  {
-    id: 1,
-    difficulty: 'Medium',
-    difficultyColor: '#22c55e',
-    title: 'Probability Basics',
-    questions: 10,
-    mins: 15,
-    bgColor: '#ecfdf5', // Light green for Medium
-  },
-  {
-    id: 2,
-    difficulty: 'Hard',
-    difficultyColor: '#f97316',
-    title: 'Number Series',
-    questions: 12,
-    mins: 20,
-    bgColor: '#fff7ed', // Light orange for Hard
-  },
-  {
-    id: 3,
-    difficulty: 'Easy',
-    difficultyColor: '#22c55e',
-    title: 'Percentages',
-    questions: 8,
-    mins: 10,
-    bgColor: '#f0fdf4', // Light green for Easy
-  },
-];
+const getDifficultyStyles = (level: string) => {
+  switch (level?.toLowerCase()) {
+    case 'easy':
+      return { bg: '#f0fdf4', color: '#22c55e' };
+    case 'medium':
+      return { bg: '#ecfdf5', color: '#10b981' };
+    case 'hard':
+      return { bg: '#fff7ed', color: '#f97316' };
+    default:
+      return { bg: '#f3f4f6', color: '#6b7280' };
+  }
+};
 
-const performanceStats = [
-  {
-    id: 1,
-    label: 'Accuracy',
-    value: '78%',
-    bgColor: '#F0EAFF',
-    icon: '📈',
-  },
-  {
-    id: 2,
-    label: 'Attempted',
-    value: '120',
-    bgColor: '#E0F7F0',
-    icon: '⏱',
-  },
-  {
-    id: 3,
-    label: 'Weak Area',
-    value: 'Algebra',
-    bgColor: '#FFF4E0',
-    icon: '⚠️',
-  },
-];
+// Moved dynamic stats to component state
 
 const navItems = [
   { label: 'Home', icon: '🏠', active: true },
@@ -75,7 +41,82 @@ const navItems = [
 ];
 
 const HomeScreen = () => {
-  const na = useNavigation()
+  const na = useNavigation();
+  const isFocused = useIsFocused();
+  const dispatch = useDispatch();
+  const userData = useSelector((state: any) => state.auth.userData);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
+  const [combinedStats, setCombinedStats] = useState<CombinedStatsResponse | null>(null);
+
+  useEffect(() => {
+    if (isFocused) {
+      fetchQuizzes();
+      fetchUserProfile();
+      fetchAnalytics();
+      fetchCombinedStats();
+    }
+  }, [isFocused]);
+
+  const fetchUserProfile = async () => {
+    const res = await GetAuthProfileApi(() => { });
+    if (res && res.profile) {
+      console.log('--- Profile Fetched in Home (Success) ---', res.profile);
+      dispatch(updateUserData(res.profile));
+    } else if (res) {
+      console.log('--- Profile Fetched in Home (No profile prop) ---', res);
+      dispatch(updateUserData(res));
+    }
+  };
+
+  const fetchQuizzes = async () => {
+    const res = await GetQuizzesApi(setLoading);
+    if (res && res.quizzes) {
+      // Pick first 5 for recommendations
+      setQuizzes(res.quizzes.slice(0, 7));
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    const res = await GetAnalyticsApi(() => {}); // Don't block UI with loader here
+    if (res) {
+      setAnalytics(res);
+    }
+  };
+
+  const fetchCombinedStats = async () => {
+    const res = await GetCombinedStatsApi(() => {});
+    if (res) {
+      setCombinedStats(res);
+    }
+  };
+
+  const overall = combinedStats?.overall;
+  const progressPercent = overall ? (overall.played / overall.total) : 0;
+  const progressPercentLabel = overall ? `${overall.played}/${overall.total}` : '0/0';
+
+  const performanceStats = [
+    {
+      id: 1,
+      label: 'Accuracy',
+      value: analytics?.top_stats?.accuracy || '0%',
+      icon: imageIndex.Accuracy,
+    },
+    {
+      id: 2,
+      label: 'Attempted',
+      value: analytics?.top_stats?.total_questions || '0',
+      icon: imageIndex.Questions,
+    },
+    {
+      id: 3,
+      label: 'Weak Area',
+      value: analytics?.areas_to_improve?.[0]?.topic || analytics?.top_stats?.streak || 'None',
+      icon: imageIndex.time,
+    },
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -84,20 +125,20 @@ const HomeScreen = () => {
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <View>
-              <Text style={styles.greeting}>Hi Arhaan 👋</Text>
+              <Text style={styles.greeting}>Hi {userData?.name || 'User'} 👋</Text>
               <Text style={styles.subText}>Ready to practice today?</Text>
             </View>
             <View style={styles.headerRight}>
               <TouchableOpacity  >
-                <Image source={imageIndex.Notification} 
-                style={{
-                  height:44,
-                  width:44,
-                 }}
+                <Image source={imageIndex.Notification}
+                  style={{
+                    height: 44,
+                    width: 44,
+                  }}
                 />
               </TouchableOpacity>
               <Image
-                source={{ uri: 'https://i.pravatar.cc/100' }}
+                source={userData?.profile_photo ? { uri: userData.profile_photo } : imageIndex.prfile}
                 style={styles.avatar}
               />
             </View>
@@ -107,83 +148,100 @@ const HomeScreen = () => {
         {/* PROGRESS CARD */}
         <View style={styles.card}>
           <View style={styles.progressHeader}>
-            <Text style={styles.progressLabel}>Progress</Text>
-            <Text style={styles.progressPercent}>2/3</Text>
+            <Text style={styles.progressLabel}>Overall Progress</Text>
+            <Text style={styles.progressPercent}>{progressPercentLabel}</Text>
           </View>
           <View style={styles.progressBar}>
-            <View style={styles.progressFill} />
+            <View style={[styles.progressFill, { width: `${progressPercent * 100}%` }]} />
           </View>
-          <Text style={styles.continueLearning}>Continue Learning</Text>
-          <Text style={styles.sectionTitle}>Quantitative Aptitude</Text>
-          <TouchableOpacity style={styles.resumeBtn}>
+          <Text style={styles.continueLearning}>Continue Practicing</Text>
+          <Text style={styles.sectionTitle}>
+            {overall?.remaining ?? 0} Questions Remaining
+          </Text>
+          <TouchableOpacity style={styles.resumeBtn}
+            onPress={() => na.navigate(ScreenNameEnum.Questions)}
+          >
             <Text style={styles.resumeBtnIcon}>▶  </Text>
-            <Text style={styles.btnText}>Resume</Text>
+            <Text style={styles.btnText}>Resume Practice</Text>
           </TouchableOpacity>
         </View>
 
         {/* RECOMMENDED QUESTIONS */}
         <Text style={styles.heading}>Recommended Questions</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalScroll}
-        >
-          {recommendedQuestions.map((item) => (
-            <View key={item.id} style={styles.questionCard}>
-              <View style={styles.cardImageContainer}>
-                <Image 
-                  source={imageIndex.CardImage}
-                  style={styles.cardImg} 
-                  resizeMode="contain"
-                />
-              </View>
-              
-              <View style={styles.cardContent}>
-                <View style={[styles.difficultyPill, { backgroundColor: item.bgColor }]}>
-                  <Text style={[styles.difficultyText, { color: item.difficultyColor }]}>
-                    {item.difficulty}
-                  </Text>
-                </View>
-
-                <Text style={styles.qTitle} numberOfLines={1}>{item.title}</Text>
-                
-                <View style={styles.metaRow}>
-                  <View style={styles.metaItem}>
-                    <Image source={imageIndex.Questions} style={styles.metaIcon} />
-                    <Text style={styles.metaText}>{item.questions} questions</Text>
+        {loading ? (
+          <View style={{ height: 180, justifyContent: 'center' }}>
+            <CustomLoader message="Finding best questions for you..." />
+          </View>
+        ) : quizzes.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalScroll}
+          >
+            {quizzes.map((item) => {
+              const styles_diff = getDifficultyStyles(item.level);
+              return (
+                <View key={item.quiz_id} style={styles.questionCard}>
+                  <View style={styles.cardImageContainer}>
+                    <Image
+                      source={imageIndex.CardImage}
+                      style={styles.cardImg}
+                      resizeMode="contain"
+                    />
                   </View>
-                  <View style={styles.metaItem}>
-                    <Image source={imageIndex.time} style={styles.metaIcon} />
-                    <Text style={styles.metaText}>{item.mins} mins</Text>
+
+                  <View style={styles.cardContent}>
+                    <View style={[styles.difficultyPill, { backgroundColor: styles_diff.bg }]}>
+                      <Text style={[styles.difficultyText, { color: styles_diff.color }]}>
+                        {item.level.charAt(0).toUpperCase() + item.level.slice(1)}
+                      </Text>
+                    </View>
+
+                    <Text style={styles.qTitle} numberOfLines={1}>{item.quiz_name}</Text>
+
+                    <View style={styles.metaRow}>
+                      <View style={styles.metaItem}>
+                        <Image source={imageIndex.Questions} style={styles.metaIcon} />
+                        <Text style={styles.metaText}>{item.total_questions} questions</Text>
+                      </View>
+                      {/* <View style={styles.metaItem}>
+                        <Image source={imageIndex.time} style={styles.metaIcon} />
+                        <Text style={styles.metaText}>15 mins</Text>
+                      </View> */}
+                    </View>
+
+                    <TouchableOpacity style={styles.startBtn}
+                      onPress={() => {
+                        na.navigate(ScreenNameEnum.QuestionBank, { quiz_id: item.quiz_id })
+                      }}
+                    >
+                      <Image source={imageIndex.Next} style={styles.playIcon} />
+                      <Text style={styles.startBtnText}>Start</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
-
-                <TouchableOpacity style={styles.startBtn} 
-                onPress={()=>{
-                  na.navigate(ScreenNameEnum.QuestionBank)
-                }}
-                >
-                  <Image source={imageIndex.Next} style={styles.playIcon} />
-                  <Text style={styles.startBtnText}>Start</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
+              );
+            })}
+          </ScrollView>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No recommended questions yet.</Text>
+          </View>
+        )}
 
         {/* PERFORMANCE SNAPSHOT */}
         <Text style={styles.heading}>Performance Snapshot</Text>
         <View style={styles.statsRow}>
           {performanceStats.map((stat) => (
             <View key={stat.id} style={styles.statCard}>
-              <Image source={imageIndex.Accuracy}
-              style={{  
-
-                height:20,
-                width:20
-              }}
+              <Image source={stat.icon}
+                style={{
+                  height: 20,
+                  width: 20,
+                  tintColor: PURPLE,
+                }}
               />
-                            <Text style={styles.statLabel}>{stat.label}</Text>
+              <Text style={styles.statLabel}>{stat.label}</Text>
 
               <Text style={styles.statValue}>{stat.value}</Text>
             </View>
@@ -227,13 +285,13 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    height:160
+    height: 160
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop:13
+    marginTop: 13
   },
   greeting: {
     color: '#fff',
@@ -282,7 +340,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-    
+
   },
   progressHeader: {
     flexDirection: 'row',
@@ -369,11 +427,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.08,
     shadowRadius: 15,
-    
+
     marginTop: 40, // Space for overlapping image
     borderWidth: Platform.OS === 'ios' ? 0 : 0.5,
-    borderColor:"#ccc",
-   },
+    borderColor: "#ccc",
+  },
   cardImageContainer: {
     alignItems: 'center',
     marginTop: -45, // Pull image up
@@ -463,7 +521,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 10,
     alignItems: 'center',
-      elevation: 8,
+    elevation: 8,
     shadowColor: "gray",
     shadowOpacity: 0.15,
     shadowRadius: 12,
@@ -484,7 +542,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#291069',
-    marginTop:11
+    marginTop: 11
   },
   statLabel: {
     fontSize: 15,
@@ -534,5 +592,14 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: PURPLE,
     marginTop: 2,
+  },
+  emptyContainer: {
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#999',
+    fontSize: 14,
   },
 });
