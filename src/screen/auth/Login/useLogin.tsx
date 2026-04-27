@@ -16,9 +16,10 @@ const useLogin = () => {
 
   const [credentials, setCredentials] = useState<LoginCredentials>({
 
-    // email: '',
-    email: 'gs1@yopmail.com',
-    password: '123456',
+    email: '',
+    // email: 'gs1@yopmail.com',
+    // password: '123456',
+    password: '',
 
     // 
   });

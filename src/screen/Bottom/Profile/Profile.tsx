@@ -66,7 +66,7 @@ export default function ProfileSetting() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBarComponent />
- 
+
 
       <ScrollView showsVerticalScrollIndicator={false}
         style={{ paddingHorizontal: 20, marginTop: 10 }}
@@ -96,19 +96,19 @@ export default function ProfileSetting() {
           <MenuItem
             icon={imageIndex.ChangePassword}
             title="Change Password"
-                        onPress={() => navigation.navigate(ScreenNameEnum.changePassword)}
+            onPress={() => navigation.navigate(ScreenNameEnum.changePassword)}
 
-           />
-          <MenuItem
+          />
+          {/* <MenuItem
             icon={imageIndex.Notification}
             title="Notification"
             onPress={() => navigation.navigate(ScreenNameEnum.NotificationsScreen)}
 
-          />
-           
-        </View>
+          /> */}
 
-        <View style={styles.card}>
+          {/* </View>
+
+        <View style={styles.card}> */}
           <MenuItem
             icon={imageIndex.ContactUs}
             title="FAQs"
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 40,
     marginBottom: 20,
-    marginTop:12
+    marginTop: 12
   },
 
   avatar: {

@@ -28,12 +28,12 @@ const MENU_ITEMS = [
     icon: imageIndex.prfile,
     screen: ScreenNameEnum.EditProfile,
   },
-  {
-    key: 'notifications',
-    label: 'Notifications',
-    icon: imageIndex.Notification,
-    screen: ScreenNameEnum.NotificationsScreen,
-  },
+  // {
+  //   key: 'notifications',
+  //   label: 'Notifications',
+  //   icon: imageIndex.Notification,
+  //   screen: ScreenNameEnum.NotificationsScreen,
+  // },
   // {
   //   key: 'help',
   //   label: 'Help & Support',
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     minHeight: 60,
   },
   backBtn: { padding: 4 },
-  backIcon: { width: 44, height: 44,   },
+  backIcon: { width: 44, height: 44, },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#fff' },
   headerRight: { width: 40 },
 
