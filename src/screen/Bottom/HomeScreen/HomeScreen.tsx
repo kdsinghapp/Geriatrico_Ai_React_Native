@@ -7,8 +7,9 @@ import {
   Image,
   TouchableOpacity,
   Platform,
+  StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import imageIndex from '../../../assets/imageIndex';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import ScreenNameEnum from '../../../routes/screenName.enum';
@@ -79,14 +80,14 @@ const HomeScreen = () => {
   };
 
   const fetchAnalytics = async () => {
-    const res = await GetAnalyticsApi(() => {}); // Don't block UI with loader here
+    const res = await GetAnalyticsApi(() => { }); // Don't block UI with loader here
     if (res) {
       setAnalytics(res);
     }
   };
 
   const fetchCombinedStats = async () => {
-    const res = await GetCombinedStatsApi(() => {});
+    const res = await GetCombinedStatsApi(() => { });
     if (res) {
       setCombinedStats(res);
     }
@@ -116,13 +117,14 @@ const HomeScreen = () => {
       icon: imageIndex.time,
     },
   ];
-
+  const insets = useSafeAreaInsets()
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container,]}>
+      <StatusBar barStyle={'light-content'} />
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* HEADER */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top }]}>
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.greeting}>Hi {userData?.name || 'User'} 👋</Text>
@@ -263,7 +265,7 @@ const HomeScreen = () => {
           </TouchableOpacity>
         ))}
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -281,7 +283,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: PURPLE,
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 60,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,

@@ -1,5 +1,5 @@
 import React, { FunctionComponent } from 'react';
-import { LogBox, Text, } from 'react-native';
+import { LogBox, StatusBar, Text, } from 'react-native';
 import 'react-native-gesture-handler';
 import AppNavigator from './src/navigators/AppNavigator';
 import { TextInput } from 'react-native';
@@ -26,6 +26,7 @@ LogBox.ignoreAllLogs();
 const App: FunctionComponent<any> = () =>
     <QueryClientProvider client={queryClient}>
         <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
+            <StatusBar barStyle={'dark-content'} />
             <AppNavigator />
         </SafeAreaView>
     </QueryClientProvider>
