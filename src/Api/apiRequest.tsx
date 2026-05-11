@@ -235,7 +235,15 @@ const LogiApi = async (
     }
 
     if (!isSuccess) {
-      errorToast(parsed?.detail || parsed?.message || 'Login failed');
+      const errorMsg = parsed?.detail || parsed?.message || 'Login failed';
+      if (errorMsg === 'Account not verified. A new OTP has been sent to your email.') {
+        successToast(errorMsg);
+        param.navigation.navigate(ScreenNameEnum.OtpScreen, {
+          email: param.email,
+        });
+        return parsed;
+      }
+      errorToast(errorMsg);
       return undefined;
     }
   } catch (error) {

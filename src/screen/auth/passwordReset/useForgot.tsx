@@ -32,10 +32,10 @@ import ScreenNameEnum from '../../../routes/screenName.enum';
     }
 
     try {
-      const response = await ForgotPasswordApi({ email }, setisLoading);
+      const response = await ForgotPasswordApi({ email: email.trim().toLowerCase() }, setisLoading);
       if (response?.success || response) {
         navigation.navigate(ScreenNameEnum.OtpScreen, {
-          email: email,
+          email: email.trim().toLowerCase(),
           isFromForgot: true
         });
       }

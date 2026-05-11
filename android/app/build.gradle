@@ -84,8 +84,8 @@ android {
                applicationId "com.geriatrico"
         minSdkVersion 26              // already fine
         targetSdkVersion 35           // <--- updated
-        versionCode 3
-        versionName "1.2"
+        versionCode 6
+        versionName "1.6"
     }
     signingConfigs {
         debug {

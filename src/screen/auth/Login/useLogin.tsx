@@ -44,7 +44,7 @@ const useLogin = () => {
     if (!validateFields()) return;
 
     const param = {
-      email: credentials.email.trim(),
+      email: credentials.email.trim().toLowerCase(),
       password: credentials.password.trim(),
       dispatch,
       navigation,

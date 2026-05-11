@@ -9,7 +9,7 @@ import { color } from '../../../constant';
 import ScreenNameEnum from '../../../routes/screenName.enum';
 import TextInputField from '../../../compoent/TextInputField';
 import useSignUp from './useSignUp';
- import ErrorText from '../../../compoent/ErrorText';
+import ErrorText from '../../../compoent/ErrorText';
 import CustomHeader from '../../../compoent/CustomHeader';
 
 export default function Sinup() {
@@ -41,7 +41,7 @@ export default function Sinup() {
 
         showsVerticalScrollIndicator={false}
       >
-                    <CustomHeader label="Edit Profile"   />
+        <CustomHeader label="" />
 
         <View style={styles.card}>
           {/* Logo */}
@@ -53,7 +53,7 @@ export default function Sinup() {
 
           {/* Title */}
           <Text style={[styles.title, {
-           }]}>Sign Up</Text>
+          }]}>Sign Up</Text>
           <Text style={styles.subTitle}>Create a new account</Text>
 
           <Text style={{ marginBottom: 18, color: 'black', fontSize: 15, fontWeight: "600", }}>Full Name</Text>
@@ -68,7 +68,7 @@ export default function Sinup() {
 
           {/* Email */}
           <Text style={{ marginBottom: 18, color: 'black', fontSize: 15, fontWeight: "600", }}>Email</Text>
-          
+
           <TextInputField
             placeholder="Email"
             text={credentials.email}
@@ -109,7 +109,7 @@ export default function Sinup() {
           {/* <ErrorText error={errors.phone} /> */}
 
           {/* Password */}
-                                <Text style={{ marginBottom: 18, color: 'black', fontSize: 15, fontWeight: "600", }}>Password</Text>
+          <Text style={{ marginBottom: 18, color: 'black', fontSize: 15, fontWeight: "600", }}>Password</Text>
 
           <TextInputField
             placeholder="Password"
@@ -121,7 +121,7 @@ export default function Sinup() {
             hide={true} // For secureTextEntry
             error={errors.password}
           />
-                                <Text style={{ marginBottom: 18, color: 'black', fontSize: 15, fontWeight: "600", }}>Confirm Password</Text>
+          <Text style={{ marginBottom: 18, color: 'black', fontSize: 15, fontWeight: "600", }}>Confirm Password</Text>
 
           {/* Confirm Password */}
           <TextInputField
@@ -137,7 +137,7 @@ export default function Sinup() {
 
           {/* SignUp Button */}
           <View style={{
-            marginTop:20
+            marginTop: 20
           }}  >
             <CustomButton title="Sign Up" onPress={handleSignUp} />
           </View>
@@ -147,13 +147,13 @@ export default function Sinup() {
       {/* Login Navigation */}
 
       <Text
-     style={{ color: '#909090', textAlign: 'center', marginBottom: 40 }}
+        style={{ color: '#909090', textAlign: 'center', marginBottom: 40 }}
         onPress={() => navigation.navigate(ScreenNameEnum.PhoneLogin)}
         suppressHighlighting={true}
       >
         Already have an account? <Text style={{ color: color.primary, fontSize: 15, fontWeight: "500" }}>Login</Text>
       </Text>
-    
+
     </ImageBackground>
   );
 }

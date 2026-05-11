@@ -72,7 +72,7 @@ const useSignUp = () => {
     const response = await SignUpApi(
       {
         name: credentials.name,
-        email: credentials.email,
+        email: credentials.email.trim().toLowerCase(),
         password: credentials.password,
       },
       setIsLoading
@@ -80,7 +80,7 @@ const useSignUp = () => {
 
     if (response?.success || response) {
       navigation.navigate(ScreenNameEnum.OtpScreen, {
-        email: credentials.email,
+        email: credentials.email.trim().toLowerCase(),
         // otp: response?.data?.otp // Passing for testing, though usually sent via SMS/Email
       });
     }

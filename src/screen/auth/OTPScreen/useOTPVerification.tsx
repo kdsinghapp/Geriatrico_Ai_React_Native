@@ -11,7 +11,6 @@ export const useOtpVerification = (cellCount: number = 4) => {
   const { phone, code, fromUserLogin, email, otp } = route.params || {};
   const [value, setValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const dispatch = useDispatch();
   const [timer, setTimer] = useState(60);
 
   // Timer countdown logic
@@ -29,7 +28,7 @@ export const useOtpVerification = (cellCount: number = 4) => {
     mob: phone,
     code: fromUserLogin ? '' : code,
     fromUserLogin: !!fromUserLogin,
-    email: email
+    email: email?.toLowerCase()
   };
   const [errorMessage, setErrorMessage] = useState('');
   const ref = useBlurOnFulfill({ value, cellCount });
@@ -42,7 +41,7 @@ export const useOtpVerification = (cellCount: number = 4) => {
   const handleResendOTP = async () => {
     if (timer > 0) return;
     try {
-      const response = await ResendOtpApi(email, setIsLoading);
+      const response = await ResendOtpApi(email?.toLowerCase(), setIsLoading);
       if (response?.success || response) {
         setTimer(60);
       }
@@ -59,7 +58,7 @@ export const useOtpVerification = (cellCount: number = 4) => {
     setErrorMessage('');
 
     if (route.params?.isFromForgot) {
-      const response = await VerifyResetOtpApi({ email, otp: value }, setIsLoading);
+      const response = await VerifyResetOtpApi({ email: email?.toLowerCase(), otp: value }, setIsLoading);
       if (response) {
         console.log(response, 'this is otp')
         // Assuming response or response.token is identifying the token
@@ -70,7 +69,7 @@ export const useOtpVerification = (cellCount: number = 4) => {
         });
       }
     } else {
-      const response = await VerifyOtpApi(email, value, setIsLoading);
+      const response = await VerifyOtpApi(email?.toLowerCase(), value, setIsLoading);
       if (response?.success || response) {
         navigation.replace(ScreenNameEnum.PhoneLogin);
       }
